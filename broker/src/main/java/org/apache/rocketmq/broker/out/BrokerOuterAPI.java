@@ -129,14 +129,17 @@ public class BrokerOuterAPI {
 
             final RegisterBrokerRequestHeader requestHeader = new RegisterBrokerRequestHeader();
             requestHeader.setBrokerAddr(brokerAddr);
+            // brokerld, O:Master:，大于 0: Slave
             requestHeader.setBrokerId(brokerId);
             requestHeader.setBrokerName(brokerName);
             requestHeader.setClusterName(clusterName);
+            // master 地址，初次请求时该值为空， slave向Nameserver注册后返回
             requestHeader.setHaServerAddr(haServerAddr);
             requestHeader.setCompressed(compressed);
 
             RegisterBrokerBody requestBody = new RegisterBrokerBody();
             requestBody.setTopicConfigSerializeWrapper(topicConfigWrapper);
+            // 消息过滤服务器列表
             requestBody.setFilterServerList(filterServerList);
             final byte[] body = requestBody.encode(compressed);
             final int bodyCrc32 = UtilAll.crc32(body);
@@ -147,6 +150,7 @@ public class BrokerOuterAPI {
                     @Override
                     public void run() {
                         try {
+                            // >>>>>>>>>
                             RegisterBrokerResult result = registerBroker(namesrvAddr,oneway, timeoutMills,requestHeader,body);
                             if (result != null) {
                                 registerBrokerResultList.add(result);
@@ -184,6 +188,7 @@ public class BrokerOuterAPI {
 
         if (oneway) {
             try {
+                // >>>>>>>>>
                 this.remotingClient.invokeOneway(namesrvAddr, request, timeoutMills);
             } catch (RemotingTooMuchRequestException e) {
                 // Ignore

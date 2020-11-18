@@ -55,12 +55,14 @@ public class BrokerStartup {
     public static InternalLogger log;
 
     public static void main(String[] args) {
+        //  >>>>>>>>>
         start(createBrokerController(args));
     }
 
     public static BrokerController start(BrokerController controller) {
         try {
 
+            //  >>>>>>>>> BrokerController#start
             controller.start();
 
             String tip = "The broker[" + controller.getBrokerConfig().getBrokerName() + ", "

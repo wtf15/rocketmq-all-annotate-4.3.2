@@ -54,7 +54,9 @@ public class NamesrvStartup {
     public static NamesrvController main0(String[] args) {
 
         try {
+            // >>>>>>>>>
             NamesrvController controller = createNamesrvController(args);
+            // >>>>>>>>>
             start(controller);
             String tip = "The Name Server boot success. serializeType=" + RemotingCommand.getSerializeTypeConfigInThisServer();
             log.info(tip);
@@ -81,14 +83,19 @@ public class NamesrvStartup {
 
         final NamesrvConfig namesrvConfig = new NamesrvConfig();
         final NettyServerConfig nettyServerConfig = new NettyServerConfig();
+        // 设置nettyServer的默认端口位9876
         nettyServerConfig.setListenPort(9876);
+        // 检查命令行参数是否带有-c选项，-c选项用于指定配置文件路径
         if (commandLine.hasOption('c')) {
             String file = commandLine.getOptionValue('c');
             if (file != null) {
+                // 如果有-c选项并且其参数值不为null，则解析该文件并将生成对应的namesrvConfig和nettyServerConfig
                 InputStream in = new BufferedInputStream(new FileInputStream(file));
                 properties = new Properties();
                 properties.load(in);
+                // 将文件解析成namsrvConfig
                 MixAll.properties2Object(properties, namesrvConfig);
+                // 将文件解析成nettyServerConfig
                 MixAll.properties2Object(properties, nettyServerConfig);
 
                 namesrvConfig.setConfigStorePath(file);
@@ -98,6 +105,7 @@ public class NamesrvStartup {
             }
         }
 
+        // 如果命令行参数带有-p选项，则打印配置项并退出
         if (commandLine.hasOption('p')) {
             InternalLogger console = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_CONSOLE_NAME);
             MixAll.printObjectProperties(console, namesrvConfig);
@@ -126,6 +134,7 @@ public class NamesrvStartup {
         final NamesrvController controller = new NamesrvController(namesrvConfig, nettyServerConfig);
 
         // remember all configs to prevent discard
+        // 将配置注册到controller中
         controller.getConfiguration().registerConfig(properties);
 
         return controller;
@@ -137,15 +146,18 @@ public class NamesrvStartup {
             throw new IllegalArgumentException("NamesrvController is null");
         }
 
+        //  >>>>>>>>>
         boolean initResult = controller.initialize();
         if (!initResult) {
             controller.shutdown();
             System.exit(-3);
         }
 
+        // 注册钩子函数，在JVM关闭前将namesrvController关闭
         Runtime.getRuntime().addShutdownHook(new ShutdownHookThread(log, new Callable<Void>() {
             @Override
             public Void call() throws Exception {
+                // >>>>>>>>>
                 controller.shutdown();
                 return null;
             }
