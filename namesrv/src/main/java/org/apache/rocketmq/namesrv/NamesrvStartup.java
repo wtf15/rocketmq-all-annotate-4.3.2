@@ -54,8 +54,10 @@ public class NamesrvStartup {
     public static NamesrvController main0(String[] args) {
 
         try {
+            // 创建NamesrvController
             // >>>>>>>>>
             NamesrvController controller = createNamesrvController(args);
+            // 启动namesrv
             // >>>>>>>>>
             start(controller);
             String tip = "The Name Server boot success. serializeType=" + RemotingCommand.getSerializeTypeConfigInThisServer();
@@ -70,7 +72,7 @@ public class NamesrvStartup {
         return null;
     }
 
-    public static NamesrvController createNamesrvController(String[] args) throws IOException, JoranException {
+    public static NamesrvController  createNamesrvController(String[] args) throws IOException, JoranException {
         System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
         //PackageConflictDetect.detectFastjson();
 
@@ -83,7 +85,7 @@ public class NamesrvStartup {
 
         final NamesrvConfig namesrvConfig = new NamesrvConfig();
         final NettyServerConfig nettyServerConfig = new NettyServerConfig();
-        // 设置nettyServer的默认端口位9876
+        // 设置nettyServer的默认端口为9876
         nettyServerConfig.setListenPort(9876);
         // 检查命令行参数是否带有-c选项，-c选项用于指定配置文件路径
         if (commandLine.hasOption('c')) {
@@ -131,6 +133,7 @@ public class NamesrvStartup {
         MixAll.printObjectProperties(log, namesrvConfig);
         MixAll.printObjectProperties(log, nettyServerConfig);
 
+        // 创建NamesrvController
         final NamesrvController controller = new NamesrvController(namesrvConfig, nettyServerConfig);
 
         // remember all configs to prevent discard
