@@ -45,8 +45,12 @@ public class MQClientManager {
     }
 
     public MQClientInstance getAndCreateMQClientInstance(final ClientConfig clientConfig, RPCHook rpcHook) {
+        // 同一个 clientId 只会创建一个 MQClientInstance
+        // client分配id,规则：客户端外网ip@jvm进程id
         String clientId = clientConfig.buildMQClientId();
+        // 根据clientId获取虚拟机中的MQClientInstance的实例
         MQClientInstance instance = this.factoryTable.get(clientId);
+        // 如果没有重新创建
         if (null == instance) {
             instance =
                 new MQClientInstance(clientConfig.cloneClientConfig(),

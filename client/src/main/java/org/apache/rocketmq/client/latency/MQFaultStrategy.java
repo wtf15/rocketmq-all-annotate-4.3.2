@@ -22,6 +22,7 @@ import org.apache.rocketmq.client.log.ClientLogger;
 import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.common.message.MessageQueue;
 
+// 消息失败策略， 延迟实现的门面类
 public class MQFaultStrategy {
     private final static InternalLogger log = ClientLogger.getLog();
     private final LatencyFaultTolerance<String> latencyFaultTolerance = new LatencyFaultToleranceImpl();
@@ -56,6 +57,7 @@ public class MQFaultStrategy {
     }
 
     public MessageQueue selectOneMessageQueue(final TopicPublishInfo tpInfo, final String lastBrokerName) {
+        //若开启了延迟容错机制，默认不开启
         if (this.sendLatencyFaultEnable) {
             try {
                 int index = tpInfo.getSendWhichQueue().getAndIncrement();
@@ -64,6 +66,7 @@ public class MQFaultStrategy {
                     if (pos < 0)
                         pos = 0;
                     MessageQueue mq = tpInfo.getMessageQueueList().get(pos);
+                    // >>>>>>>>>
                     if (latencyFaultTolerance.isAvailable(mq.getBrokerName())) {
                         if (null == lastBrokerName || mq.getBrokerName().equals(lastBrokerName))
                             return mq;
@@ -73,6 +76,7 @@ public class MQFaultStrategy {
                 final String notBestBroker = latencyFaultTolerance.pickOneAtLeast();
                 int writeQueueNums = tpInfo.getQueueIdByBroker(notBestBroker);
                 if (writeQueueNums > 0) {
+                    // >>>>>>>>>
                     final MessageQueue mq = tpInfo.selectOneMessageQueue();
                     if (notBestBroker != null) {
                         mq.setBrokerName(notBestBroker);
@@ -86,15 +90,28 @@ public class MQFaultStrategy {
                 log.error("Error occurred when selecting message queue", e);
             }
 
+            // >>>>>>>>>
             return tpInfo.selectOneMessageQueue();
         }
 
+        // 容错开关关闭
+        // >>>>>>>>>
         return tpInfo.selectOneMessageQueue(lastBrokerName);
     }
 
+    /**
+     *
+     * @param brokerName broker 名称
+     * @param currentLatency 本次消息发送延迟时间 currentLatency
+     * @param isolation 是否隔离，该参数的含义如果为 true，则使用默认时长 30s来
+     * 计算 Broker故障规避时长，如果为 false， 则使用本次消息发送延迟时间来计算 Broker故障规避时长
+     */
     public void updateFaultItem(final String brokerName, final long currentLatency, boolean isolation) {
         if (this.sendLatencyFaultEnable) {
+            // >>>>>>>>>
+            // 计算因本次消息发送故障需要将 Broker 规避的时长，也就是接下来多久的时间内该 Broker将不参与消息发送队列负载
             long duration = computeNotAvailableDuration(isolation ? 30000 : currentLatency);
+            // >>>>>>>>>
             this.latencyFaultTolerance.updateFaultItem(brokerName, currentLatency, duration);
         }
     }

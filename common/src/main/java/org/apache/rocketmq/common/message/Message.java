@@ -27,6 +27,9 @@ public class Message implements Serializable {
 
     private String topic;
     private int flag;
+    // 存储 TAGS（消息 TAG，用于消息过滤）、
+    // KEYS（Message 索引键，多个用空格隔开，RocketMQ 可以根据这些 key 快速检索到消息）、
+    // WAIT（消息发送时是否等消息存储完成后再返回）
     private Map<String, String> properties;
     private byte[] body;
     private String transactionId;
@@ -44,11 +47,14 @@ public class Message implements Serializable {
         this.body = body;
 
         if (tags != null && tags.length() > 0)
+            // >>>>>>>>>
             this.setTags(tags);
 
         if (keys != null && keys.length() > 0)
+            // >>>>>>>>>
             this.setKeys(keys);
 
+        // >>>>>>>>>
         this.setWaitStoreMsgOK(waitStoreMsgOK);
     }
 

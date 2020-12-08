@@ -231,14 +231,19 @@ public class MQClientInstance {
                         this.mQClientAPIImpl.fetchNameServerAddr();
                     }
                     // Start request-response channel
+                    // 启动remotingClient
                     this.mQClientAPIImpl.start();
                     // Start various schedule tasks
+                    // 启动若干定时任务(更新路由/清理下线broker/发送心跳/持久化consumerOffset/调整线程池)
                     this.startScheduledTask();
                     // Start pull service
+                    // 启动拉取消息的线程
                     this.pullMessageService.start();
                     // Start rebalance service
+                    // 启动负载均衡服务线程
                     this.rebalanceService.start();
                     // Start push service
+                    // 重新做一次start，但是参数是false
                     this.defaultMQProducer.getDefaultMQProducerImpl().start(false);
                     log.info("the client factory [{}] start OK", this.clientId);
                     this.serviceState = ServiceState.RUNNING;
@@ -489,6 +494,7 @@ public class MQClientInstance {
     }
 
     public boolean updateTopicRouteInfoFromNameServer(final String topic) {
+        // >>>>>>>>>
         return updateTopicRouteInfoFromNameServer(topic, false, null);
     }
 
@@ -590,6 +596,7 @@ public class MQClientInstance {
         try {
             if (this.lockNamesrv.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
                 try {
+                    // ---------------------------- step1 ---------------------------------
                     TopicRouteData topicRouteData;
                     if (isDefault && defaultMQProducer != null) {
                         topicRouteData = this.mQClientAPIImpl.getDefaultTopicRouteInfoFromNameServer(defaultMQProducer.getCreateTopicKey(),
@@ -604,7 +611,11 @@ public class MQClientInstance {
                     } else {
                         topicRouteData = this.mQClientAPIImpl.getTopicRouteInfoFromNameServer(topic, 1000 * 3);
                     }
+                    // ---------------------------- step1 ---------------------------------
+
+
                     if (topicRouteData != null) {
+                        // ---------------------------- step2 ---------------------------------
                         TopicRouteData old = this.topicRouteTable.get(topic);
                         boolean changed = topicRouteDataIsChange(old, topicRouteData);
                         if (!changed) {
@@ -612,6 +623,7 @@ public class MQClientInstance {
                         } else {
                             log.info("the topic[{}] route info changed, old[{}] ,new[{}]", topic, old, topicRouteData);
                         }
+                        // ---------------------------- step2 ---------------------------------
 
                         if (changed) {
                             TopicRouteData cloneTopicRouteData = topicRouteData.cloneTopicRouteData();
@@ -620,8 +632,10 @@ public class MQClientInstance {
                                 this.brokerAddrTable.put(bd.getBrokerName(), bd.getBrokerAddrs());
                             }
 
+                            // ---------------------------- step4 ---------------------------------
                             // Update Pub info
                             {
+                                // >>>>>>>>>
                                 TopicPublishInfo publishInfo = topicRouteData2TopicPublishInfo(topic, topicRouteData);
                                 publishInfo.setHaveTopicRouterInfo(true);
                                 Iterator<Entry<String, MQProducerInner>> it = this.producerTable.entrySet().iterator();
@@ -633,6 +647,7 @@ public class MQClientInstance {
                                     }
                                 }
                             }
+                            // ---------------------------- step4 ---------------------------------
 
                             // Update sub info
                             {

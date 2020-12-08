@@ -31,6 +31,7 @@ public class Producer {
         /*
          * Instantiate with a producer group name.
          */
+        // >>>>>>>>>
         DefaultMQProducer producer = new DefaultMQProducer("please_rename_unique_group_name");
 
         /*
@@ -48,6 +49,7 @@ public class Producer {
         /*
          * Launch the instance.
          */
+        // >>>>>>>>>
         producer.start();
 
         for (int i = 0; i < 1; i++) {

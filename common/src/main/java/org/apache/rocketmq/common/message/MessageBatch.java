@@ -32,6 +32,7 @@ public class MessageBatch extends Message implements Iterable<Message> {
     }
 
     public byte[] encode() {
+        // >>>>>>>>>
         return MessageDecoder.encodeMessages(messages);
     }
 

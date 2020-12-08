@@ -71,26 +71,32 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
      *
      * See {@linktourl http://rocketmq.apache.org/docs/core-concept/} for more discussion.
      */
+    // 通常具有同样作用（同样topic）的一些producer可以归为同一个group。在事务消息机制中，如果发送某条事务消息后的producer-A宕机，
+    // 使得事务消息一直处于PREPARED状态并超时，则broker会回查同一个group的其他producer，确认这条消息应该commit还是rollback
     private String producerGroup;
 
     /**
      * Just for testing or demo program
      */
+    // 默认 topicKey，仅用于测试或演示程序
     private String createTopicKey = MixAll.AUTO_CREATE_TOPIC_KEY_TOPIC;
 
     /**
      * Number of queues to create per default topic.
      */
+    // 默认主题在每一个 Broker 队列数量
     private volatile int defaultTopicQueueNums = 4;
 
     /**
      * Timeout for sending messages.
      */
+    // 发送消息默认超时时间，默认 3s
     private int sendMsgTimeout = 3000;
 
     /**
      * Compress message body threshold, namely, message body larger than 4k will be compressed on default.
      */
+    // 消息体超过该值则启用压缩，默认 4K
     private int compressMsgBodyOverHowmuch = 1024 * 4;
 
     /**
@@ -99,6 +105,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
      *
      * This may potentially cause message duplication which is up to application developers to resolve.
      */
+    // 同步方式发送消息重试次数，默认为 2，总共执行 3 次
     private int retryTimesWhenSendFailed = 2;
 
     /**
@@ -107,16 +114,19 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
      *
      * This may potentially cause message duplication which is up to application developers to resolve.
      */
+    // 异步方式发送消息重试次数，默认为 2
     private int retryTimesWhenSendAsyncFailed = 2;
 
     /**
      * Indicate whether to retry another broker on sending failure internally.
      */
+    // 消息重试时选择另外一个 Broker时，是否不等待存储结果就返回，默认为 false
     private boolean retryAnotherBrokerWhenNotStoreOK = false;
 
     /**
      * Maximum allowed message size in bytes.
      */
+    // 允许发送的最大消息长度，默认为 4M，眩值最大值为 2^32-1
     private int maxMessageSize = 1024 * 1024 * 4; // 4M
 
     /**
@@ -134,6 +144,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
      */
     public DefaultMQProducer(final String producerGroup, RPCHook rpcHook) {
         this.producerGroup = producerGroup;
+        // 将自己作为参数传入，实现了两个类相互引用
         defaultMQProducerImpl = new DefaultMQProducerImpl(this, rpcHook);
     }
 
@@ -143,6 +154,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
      * @param producerGroup Producer group, see the name-sake field.
      */
     public DefaultMQProducer(final String producerGroup) {
+        // >>>>>>>>>
         this(producerGroup, null);
     }
 
@@ -169,6 +181,8 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
      */
     @Override
     public void start() throws MQClientException {
+        // 调用内部类的start方法
+        // >>>>>>>>>
         this.defaultMQProducerImpl.start();
     }
 
@@ -211,6 +225,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
     @Override
     public SendResult send(
         Message msg) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
+        // >>>>>>>>>
         return this.defaultMQProducerImpl.send(msg);
     }
 
@@ -624,6 +639,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
     @Override
     public SendResult send(
         Collection<Message> msgs) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
+        // >>>>>>>>> batch
         return this.defaultMQProducerImpl.send(batch(msgs));
     }
 
@@ -663,6 +679,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
                 Validators.checkMessage(message, this);
                 MessageClientIDSetter.setUniqID(message);
             }
+            // >>>>>>>>> encode
             msgBatch.setBody(msgBatch.encode());
         } catch (Exception e) {
             throw new MQClientException("Failed to initiate the MessageBatch", e);
