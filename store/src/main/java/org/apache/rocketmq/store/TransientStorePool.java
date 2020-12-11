@@ -31,8 +31,11 @@ import sun.nio.ch.DirectBuffer;
 public class TransientStorePool {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
+    // avaliableBuffers个数，可通过在 broker 中配置文件中设置 transientStorePoolSize，默认为 5
     private final int poolSize;
+    // 每个 ByteBuffer大小， 默认为 mapedFileSizeCommitLog，表明 TransientStorePool 为 commitlog 文件服务
     private final int fileSize;
+    // ByteBuffer容器，双端队列
     private final Deque<ByteBuffer> availableBuffers;
     private final MessageStoreConfig storeConfig;
 
@@ -47,11 +50,13 @@ public class TransientStorePool {
      * It's a heavy init method.
      */
     public void init() {
+        // 创建 poolSize个堆外内存
         for (int i = 0; i < poolSize; i++) {
             ByteBuffer byteBuffer = ByteBuffer.allocateDirect(fileSize);
 
             final long address = ((DirectBuffer) byteBuffer).address();
             Pointer pointer = new Pointer(address);
+            // 利用 com.sun.jna.Library类库将该批内存锁定，避免被置换到交换区，提高存储性能
             LibC.INSTANCE.mlock(pointer, new NativeLong(fileSize));
 
             availableBuffers.offer(byteBuffer);
