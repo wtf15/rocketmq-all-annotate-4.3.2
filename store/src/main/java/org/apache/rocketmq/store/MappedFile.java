@@ -191,6 +191,7 @@ public class MappedFile extends ReferenceResource {
     }
 
     public AppendMessageResult appendMessage(final MessageExtBrokerInner msg, final AppendMessageCallback cb) {
+        // >>>>>>>>>
         return appendMessagesInner(msg, cb);
     }
 
@@ -202,13 +203,17 @@ public class MappedFile extends ReferenceResource {
         assert messageExt != null;
         assert cb != null;
 
+        // 获取 MappedFile 当前写指针
         int currentPos = this.wrotePosition.get();
 
+        // 如果 currentPos 小于文件大小
         if (currentPos < this.fileSize) {
+            // 通过 slice()方法创建一个与 MappedFile 的共享内存区，并设置 position 为当前指针
             ByteBuffer byteBuffer = writeBuffer != null ? writeBuffer.slice() : this.mappedByteBuffer.slice();
             byteBuffer.position(currentPos);
             AppendMessageResult result = null;
             if (messageExt instanceof MessageExtBrokerInner) {
+                // >>>>>>>>>
                 result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos, (MessageExtBrokerInner) messageExt);
             } else if (messageExt instanceof MessageExtBatch) {
                 result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos, (MessageExtBatch) messageExt);
