@@ -848,6 +848,7 @@ public class CommitLog {
             if (mappedFile.isAvailable()) {
                 return mappedFile.getFileFromOffset();
             } else {
+                // >>>>>>>>>
                 return this.rollNextFile(mappedFile.getFileFromOffset());
             }
         }
@@ -860,6 +861,7 @@ public class CommitLog {
         MappedFile mappedFile = this.mappedFileQueue.findMappedFileByOffset(offset, offset == 0);
         if (mappedFile != null) {
             int pos = (int) (offset % mappedFileSize);
+            // >>>>>>>>>
             return mappedFile.selectMappedBuffer(pos, size);
         }
         return null;
