@@ -239,11 +239,18 @@ public class DefaultMessageStore implements MessageStore {
             this.scheduleMessageService.start();
         }
 
+        // reputFromOffset 该参数的含义是 ReputMessageService从哪个物理偏移量开始转发消息给 ConsumeQueue和 IndexFile
+        // 如果允许重复转发
         if (this.getMessageStoreConfig().isDuplicationEnable()) {
+            // reputFromOffset设置为 CommitLog的提交指针
             this.reputMessageService.setReputFromOffset(this.commitLog.getConfirmOffset());
         } else {
+            // 如果不允许重复转发，reputFromOffset设置为 Commitlog 的内存中最大偏移量
             this.reputMessageService.setReputFromOffset(this.commitLog.getMaxOffset());
         }
+        // Broker服务器在启动时会启动 ReputMessageService线程
+        // >>>>>>>>>
+        // org.apache.rocketmq.store.DefaultMessageStore.ReputMessageService.run
         this.reputMessageService.start();
 
         this.haService.start();
@@ -1388,12 +1395,15 @@ public class DefaultMessageStore implements MessageStore {
 
     public void doDispatch(DispatchRequest req) {
         for (CommitLogDispatcher dispatcher : this.dispatcherList) {
+            // >>>>>>>>>
             dispatcher.dispatch(req);
         }
     }
 
     public void putMessagePositionInfo(DispatchRequest dispatchRequest) {
+        // 根据消息主题与队列 ID，先获取对应的 ConsumeQueue文件
         ConsumeQueue cq = this.findConsumeQueue(dispatchRequest.getTopic(), dispatchRequest.getQueueId());
+        // >>>>>>>>>
         cq.putMessagePositionInfoWrapper(dispatchRequest);
     }
 
@@ -1442,6 +1452,7 @@ public class DefaultMessageStore implements MessageStore {
             switch (tranType) {
                 case MessageSysFlag.TRANSACTION_NOT_TYPE:
                 case MessageSysFlag.TRANSACTION_COMMIT_TYPE:
+                    // >>>>>>>>>
                     DefaultMessageStore.this.putMessagePositionInfo(request);
                     break;
                 case MessageSysFlag.TRANSACTION_PREPARED_TYPE:
@@ -1456,6 +1467,7 @@ public class DefaultMessageStore implements MessageStore {
         @Override
         public void dispatch(DispatchRequest request) {
             if (DefaultMessageStore.this.messageStoreConfig.isMessageIndexEnable()) {
+                // >>>>>>>>>
                 DefaultMessageStore.this.indexService.buildIndex(request);
             }
         }
@@ -1775,6 +1787,7 @@ public class DefaultMessageStore implements MessageStore {
                     break;
                 }
 
+                // 返回 reputFromOffset偏移量开始的全部有效数据(commitlog文件)
                 SelectMappedBufferResult result = DefaultMessageStore.this.commitLog.getData(reputFromOffset);
                 if (result != null) {
                     try {
@@ -1786,7 +1799,11 @@ public class DefaultMessageStore implements MessageStore {
                             int size = dispatchRequest.getMsgSize();
 
                             if (dispatchRequest.isSuccess()) {
+                                // 如果消息长度大于0，则调用 doDispatch 方法
                                 if (size > 0) {
+                                    // 最终将分别调用 CommitLogDispatcherBuildConsumeQueue (构建消息消费队列 )、
+                                    // CommitLogDispatcherBuildlndex (构建索引文件)
+                                    // >>>>>>>>>
                                     DefaultMessageStore.this.doDispatch(dispatchRequest);
 
                                     if (BrokerRole.SLAVE != DefaultMessageStore.this.getMessageStoreConfig().getBrokerRole()
@@ -1841,7 +1858,9 @@ public class DefaultMessageStore implements MessageStore {
 
             while (!this.isStopped()) {
                 try {
+                    // 每推送一次休息1毫秒
                     Thread.sleep(1);
+                    // >>>>>>>>>
                     this.doReput();
                 } catch (Exception e) {
                     DefaultMessageStore.log.warn(this.getServiceName() + " service has exception. ", e);

@@ -778,6 +778,7 @@ public class BrokerController {
 
     public void start() throws Exception {
         if (this.messageStore != null) {
+            // >>>>>>>>>
             this.messageStore.start();
         }
 
