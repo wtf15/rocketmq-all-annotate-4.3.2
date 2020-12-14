@@ -171,6 +171,7 @@ public class DefaultMessageStore implements MessageStore {
 
         for (ConcurrentMap<Integer, ConsumeQueue> maps : tables.values()) {
             for (ConsumeQueue logic : maps.values()) {
+                // >>>>>>>>>
                 logic.truncateDirtyLogicFiles(phyOffset);
             }
         }
@@ -183,25 +184,37 @@ public class DefaultMessageStore implements MessageStore {
         boolean result = true;
 
         try {
+            // 判断上一次退出是否正常，具体是判断abort文件是不是存在，如果存在abort文件，说明 Broker 是异常退出
+            // >>>>>>>>>
             boolean lastExitOK = !this.isTempFileExist();
             log.info("last shutdown {}", lastExitOK ? "normally" : "abnormally");
 
+            // 加载延迟队列
             if (null != scheduleMessageService) {
                 result = result && this.scheduleMessageService.load();
             }
 
             // load Commit Log
+            // 加载 Commitlog 文件
+            // >>>>>>>>>
             result = result && this.commitLog.load();
 
             // load Consume Queue
+            // 加载消息消费队列
+            // >>>>>>>>>
             result = result && this.loadConsumeQueue();
 
             if (result) {
+                // 加载存储检测点
                 this.storeCheckpoint =
                     new StoreCheckpoint(StorePathConfigHelper.getStoreCheckpoint(this.messageStoreConfig.getStorePathRootDir()));
 
+                // 加载索引文件
+                // >>>>>>>>>
                 this.indexService.load(lastExitOK);
 
+                // 根据 Broker 是否是正常停止，执行不同的恢复策略
+                // >>>>>>>>>
                 this.recover(lastExitOK);
 
                 log.info("load over, and the max phy offset = {}", this.getMaxPhyOffset());
@@ -318,6 +331,7 @@ public class DefaultMessageStore implements MessageStore {
     public void destroyLogics() {
         for (ConcurrentMap<Integer, ConsumeQueue> maps : this.consumeQueueTable.values()) {
             for (ConsumeQueue logic : maps.values()) {
+                // >>>>>>>>>
                 logic.destroy();
             }
         }
@@ -1260,21 +1274,28 @@ public class DefaultMessageStore implements MessageStore {
     }
 
     private boolean isTempFileExist() {
+        // 获取${ROCET_HOME}/store/abort文件名
         String fileName = StorePathConfigHelper.getAbortFile(this.messageStoreConfig.getStorePathRootDir());
         File file = new File(fileName);
+        // 判断abort文件是不是存在，如果存在abort文件，说明 Broker 是异常退出
         return file.exists();
     }
 
     private boolean loadConsumeQueue() {
+        // 获取消息消费队列根目录
         File dirLogic = new File(StorePathConfigHelper.getStorePathConsumeQueue(this.messageStoreConfig.getStorePathRootDir()));
+        // 获取该Broker存储的所有topic
         File[] fileTopicList = dirLogic.listFiles();
         if (fileTopicList != null) {
 
+            // 遍历每个主题目录
             for (File fileTopic : fileTopicList) {
                 String topic = fileTopic.getName();
 
+                // 获取该topic下的所有消息消费队列
                 File[] fileQueueIdList = fileTopic.listFiles();
                 if (fileQueueIdList != null) {
+                    // 分别加载每个消息消费队列下的文件
                     for (File fileQueueId : fileQueueIdList) {
                         int queueId;
                         try {
@@ -1306,11 +1327,16 @@ public class DefaultMessageStore implements MessageStore {
         long maxPhyOffsetOfConsumeQueue = this.recoverConsumeQueue();
 
         if (lastExitOK) {
+            // Broker 正常停止文件恢复
+            // >>>>>>>>>
             this.commitLog.recoverNormally(maxPhyOffsetOfConsumeQueue);
         } else {
+            // Broker 异常停止文件恢复
+            // >>>>>>>>>
             this.commitLog.recoverAbnormally(maxPhyOffsetOfConsumeQueue);
         }
 
+        // >>>>>>>>>
         this.recoverTopicQueueTable();
     }
 
@@ -1353,6 +1379,7 @@ public class DefaultMessageStore implements MessageStore {
         for (ConcurrentMap<Integer, ConsumeQueue> maps : this.consumeQueueTable.values()) {
             for (ConsumeQueue logic : maps.values()) {
                 String key = logic.getTopic() + "-" + logic.getQueueId();
+                // 在 CommitLog 实例中保存每个消息消费队列当前的存储逻辑偏移量
                 table.put(key, logic.getMaxOffsetInQueue());
                 logic.correctMinOffset(minPhyOffset);
             }

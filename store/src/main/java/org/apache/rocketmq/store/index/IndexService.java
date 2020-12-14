@@ -65,9 +65,12 @@ public class IndexService {
                     IndexFile f = new IndexFile(file.getPath(), this.hashSlotNum, this.indexNum, 0, 0);
                     f.load();
 
+                    // 如果上次异常退出
                     if (!lastExitOK) {
+                        // 如果索引文件上次刷盘时间小于该索引文件最大的消息时间戳
                         if (f.getEndTimestamp() > this.defaultMessageStore.getStoreCheckpoint()
                             .getIndexMsgTimestamp()) {
+                            // 销毁文件
                             f.destroy(0);
                             continue;
                         }

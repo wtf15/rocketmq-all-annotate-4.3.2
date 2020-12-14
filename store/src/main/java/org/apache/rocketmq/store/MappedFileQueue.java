@@ -107,20 +107,27 @@ public class MappedFileQueue {
     public void truncateDirtyFiles(long offset) {
         List<MappedFile> willRemoveFiles = new ArrayList<MappedFile>();
 
+        // 遍历目录下的文件
         for (MappedFile file : this.mappedFiles) {
             long fileTailOffset = file.getFileFromOffset() + this.mappedFileSize;
+            // 如果文件的尾部偏移量大于 offset
             if (fileTailOffset > offset) {
+                // 如果offset大于文件的起始偏移量，说明当前文件包含了有效偏移量
                 if (offset >= file.getFileFromOffset()) {
                     file.setWrotePosition((int) (offset % this.mappedFileSize));
                     file.setCommittedPosition((int) (offset % this.mappedFileSize));
                     file.setFlushedPosition((int) (offset % this.mappedFileSize));
+                // 如果 offset小于文件的起始偏移量，说明该文件是有效文件后面创建的
                 } else {
+                    // 释放 MappedFile 占用的内存资源(内存映射与内存通道等)
                     file.destroy(1000);
+                    // 加入到待删除文件列表中
                     willRemoveFiles.add(file);
                 }
             }
         }
 
+        // 将文件从物理磁盘删除
         this.deleteExpiredFile(willRemoveFiles);
     }
 
@@ -152,9 +159,11 @@ public class MappedFileQueue {
         File[] files = dir.listFiles();
         if (files != null) {
             // ascending order
+            // 按照文件名排序
             Arrays.sort(files);
             for (File file : files) {
 
+                // 如果文件大小与配置文件的单个文件大小不一致，将忽略该目录下所有文件直接返回
                 if (file.length() != this.mappedFileSize) {
                     log.warn(file + "\t" + file.length()
                         + " length not matched message store config value, ignore it");
