@@ -135,6 +135,7 @@ public class CommitLog {
         final long intervalForcibly,
         final boolean cleanImmediately
     ) {
+        // >>>>>>>>>
         return this.mappedFileQueue.deleteExpiredFileByTime(expiredTime, deleteFilesInterval, intervalForcibly, cleanImmediately);
     }
 
