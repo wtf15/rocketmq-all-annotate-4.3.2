@@ -58,7 +58,7 @@ public class Consumer {
         /*
          * Subscribe one more more topics to consume.
          */
-        consumer.subscribe("TopicTest", "*");
+        consumer.subscribe("TopicTest_wtf", "*");
 
         /*
          *  Register callback to execute on arrival of messages fetched from brokers.
@@ -76,6 +76,7 @@ public class Consumer {
         /*
          *  Launch the consumer instance.
          */
+        // >>>>>>>>>
         consumer.start();
 
         System.out.printf("Consumer Started.%n");

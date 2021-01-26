@@ -87,7 +87,7 @@ public class DefaultMessageStore implements MessageStore {
     // MappedFile 分配服务
     private final AllocateMappedFileService allocateMappedFileService;
 
-    // CommitLog消息分发，根据 CommitLog 文件构建 ConsumeQueue、 IndexFile 文件
+    // CommitLog消息分发，根据 CommitLog 文件构建 ConsumeQueue、IndexFile 文件
     private final ReputMessageService reputMessageService;
 
     // 存储 HA 机制
@@ -269,6 +269,7 @@ public class DefaultMessageStore implements MessageStore {
         this.haService.start();
 
         this.createTempFile();
+        // >>>>>>>>>
         this.addScheduleTask();
         this.shutdown = false;
     }
@@ -493,12 +494,16 @@ public class DefaultMessageStore implements MessageStore {
         long beginTime = this.getSystemClock().now();
 
         GetMessageStatus status = GetMessageStatus.NO_MESSAGE_IN_QUEUE;
+        // 待查找的队列偏移量
         long nextBeginOffset = offset;
+        // 当前消息队列最小偏移量
         long minOffset = 0;
+        // 当前消息队列最大偏移量
         long maxOffset = 0;
 
         GetMessageResult getResult = new GetMessageResult();
 
+        // 当前 commitLog 文件最大偏移量
         final long maxOffsetPy = this.commitLog.getMaxOffset();
 
         ConsumeQueue consumeQueue = findConsumeQueue(topic, queueId);
@@ -506,15 +511,21 @@ public class DefaultMessageStore implements MessageStore {
             minOffset = consumeQueue.getMinOffsetInQueue();
             maxOffset = consumeQueue.getMaxOffsetInQueue();
 
+            // 如果当前消费队列中没有消息
             if (maxOffset == 0) {
                 status = GetMessageStatus.NO_MESSAGE_IN_QUEUE;
+                // >>>>>>>>>
                 nextBeginOffset = nextOffsetCorrection(offset, 0);
+            // 如果待拉取消息偏移量小于队列的起始偏移量
             } else if (offset < minOffset) {
                 status = GetMessageStatus.OFFSET_TOO_SMALL;
                 nextBeginOffset = nextOffsetCorrection(offset, minOffset);
+            // 如果待拉取偏移量等于队列最大偏移量
             } else if (offset == maxOffset) {
                 status = GetMessageStatus.OFFSET_OVERFLOW_ONE;
+                // 下次拉取偏移量依然为 offset
                 nextBeginOffset = nextOffsetCorrection(offset, offset);
+            // 如果偏移量越界
             } else if (offset > maxOffset) {
                 status = GetMessageStatus.OFFSET_OVERFLOW_BADLY;
                 if (0 == minOffset) {
@@ -522,7 +533,10 @@ public class DefaultMessageStore implements MessageStore {
                 } else {
                     nextBeginOffset = nextOffsetCorrection(offset, maxOffset);
                 }
+            // 以上为消息偏移量异常情况，需要校对下一次拉取偏移量
+            // 如果待拉取偏移量大于 minOffset并且小于 maxOffset
             } else {
+                // >>>>>>>>>
                 SelectMappedBufferResult bufferConsumeQueue = consumeQueue.getIndexBuffer(offset);
                 if (bufferConsumeQueue != null) {
                     try {
@@ -567,6 +581,7 @@ public class DefaultMessageStore implements MessageStore {
                                 }
                             }
 
+                            // 首先根据ConsumeQueue条目进行消息过滤，如果不匹配则直接跳过该条消息，继续拉取下一条消息
                             if (messageFilter != null
                                 && !messageFilter.isMatchedByConsumeQueue(isTagsCodeLegal ? tagsCode : null, extRet ? cqExtUnit : null)) {
                                 if (getResult.getBufferTotalSize() == 0) {
@@ -1854,13 +1869,14 @@ public class DefaultMessageStore implements MessageStore {
                             if (dispatchRequest.isSuccess()) {
                                 // 如果消息长度大于0，则调用 doDispatch 方法
                                 if (size > 0) {
-                                    // 最终将分别调用 CommitLogDispatcherBuildConsumeQueue (构建消息消费队列 )、
-                                    // CommitLogDispatcherBuildlndex (构建索引文件)
+                                    // 最终将分别调用 CommitLogDispatcherBuildConsumeQueue (构建消息消费队列)、
+                                    // CommitLogDispatcherBuildIndex (构建索引文件)
                                     // >>>>>>>>>
                                     DefaultMessageStore.this.doDispatch(dispatchRequest);
 
                                     if (BrokerRole.SLAVE != DefaultMessageStore.this.getMessageStoreConfig().getBrokerRole()
                                         && DefaultMessageStore.this.brokerConfig.isLongPollingEnable()) {
+                                        // >>>>>>>>>
                                         DefaultMessageStore.this.messageArrivingListener.arriving(dispatchRequest.getTopic(),
                                             dispatchRequest.getQueueId(), dispatchRequest.getConsumeQueueOffset() + 1,
                                             dispatchRequest.getTagsCode(), dispatchRequest.getStoreTimestamp(),

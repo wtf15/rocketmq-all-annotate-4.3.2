@@ -238,9 +238,11 @@ public class MQClientInstance {
                     this.startScheduledTask();
                     // Start pull service
                     // 启动拉取消息的线程
+                    // >>>>>>>>> PullMessageService#run
                     this.pullMessageService.start();
                     // Start rebalance service
                     // 启动负载均衡服务线程
+                    // >>>>>>>>> RebalanceService#run
                     this.rebalanceService.start();
                     // Start push service
                     // 重新做一次start，但是参数是false
@@ -305,6 +307,8 @@ public class MQClientInstance {
             @Override
             public void run() {
                 try {
+                    // 持久化消息进度
+                    // >>>>>>>>>
                     MQClientInstance.this.persistAllConsumerOffset();
                 } catch (Exception e) {
                     log.error("ScheduledTask persistAllConsumerOffset exception", e);
@@ -472,6 +476,7 @@ public class MQClientInstance {
         while (it.hasNext()) {
             Entry<String, MQConsumerInner> entry = it.next();
             MQConsumerInner impl = entry.getValue();
+            // >>>>>>>>>
             impl.persistConsumerOffset();
         }
     }
@@ -967,10 +972,12 @@ public class MQClientInstance {
     }
 
     public void doRebalance() {
+        // 遍历已注册的消费者
         for (Map.Entry<String, MQConsumerInner> entry : this.consumerTable.entrySet()) {
             MQConsumerInner impl = entry.getValue();
             if (impl != null) {
                 try {
+                    // >>>>>>>>>
                     impl.doRebalance();
                 } catch (Throwable e) {
                     log.error("doRebalance exception", e);

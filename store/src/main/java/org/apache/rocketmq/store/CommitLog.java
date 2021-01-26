@@ -694,7 +694,9 @@ public class CommitLog {
         storeStatsService.getSinglePutMessageTopicTimesTotal(msg.getTopic()).incrementAndGet();
         storeStatsService.getSinglePutMessageTopicSizeTotal(topic).addAndGet(result.getWroteBytes());
 
+        // >>>>>>>>> 刷盘
         handleDiskFlush(result, putMessageResult, msg);
+        // 执行 HA 主从同步复制
         handleHA(result, putMessageResult, msg);
 
         return putMessageResult;

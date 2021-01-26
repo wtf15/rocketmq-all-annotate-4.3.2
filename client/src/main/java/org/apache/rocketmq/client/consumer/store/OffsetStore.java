@@ -26,15 +26,19 @@ import org.apache.rocketmq.remoting.exception.RemotingException;
 /**
  * Offset store interface
  */
+// 消息消费进度
 public interface OffsetStore {
     /**
      * Load
      */
+    // 从消息进度存储文件加载消息进度到内存
     void load() throws MQClientException;
 
     /**
      * Update the offset,store it in memory
      */
+    // 更新内存中的消息消费进度
+    // increaseOnly：true表示 offset必须大于内存中当前的消费偏移量才更新
     void updateOffset(final MessageQueue mq, final long offset, final boolean increaseOnly);
 
     /**
@@ -42,11 +46,15 @@ public interface OffsetStore {
      *
      * @return The fetched offset
      */
+    // 读取消息消费进度
+    // type：读取方式，可选值 READ_FROM_MEMORY:从内存中;
+    // READ_FROM_STORE:从磁盘中; MEMORY_FIRST_THEN_STORE:先从内存读取，再从磁盘
     long readOffset(final MessageQueue mq, final ReadOffsetType type);
 
     /**
      * Persist all offsets,may be in local storage or remote name server
      */
+    // 持久化指定消息队列进度到磁盘
     void persistAll(final Set<MessageQueue> mqs);
 
     /**
@@ -57,11 +65,13 @@ public interface OffsetStore {
     /**
      * Remove offset
      */
+    // 将消息队列的消息消费进度从内存中移除
     void removeOffset(MessageQueue mq);
 
     /**
      * @return The cloned offset table of given topic
      */
+    // 克隆该主题下所有消息队列的消息消费进度
     Map<MessageQueue, Long> cloneOffsetTable(String topic);
 
     /**
@@ -69,6 +79,7 @@ public interface OffsetStore {
      * @param offset
      * @param isOneway
      */
+    // 更新存储在 Broker 端的消息消费进度，使用集群模式
     void updateConsumeOffsetToBroker(MessageQueue mq, long offset, boolean isOneway) throws RemotingException,
         MQBrokerException, InterruptedException, MQClientException;
 }

@@ -30,6 +30,7 @@ public class Message implements Serializable {
     // 存储 TAGS（消息 TAG，用于消息过滤）、
     // KEYS（Message 索引键，多个用空格隔开，RocketMQ 可以根据这些 key 快速检索到消息）、
     // WAIT（消息发送时是否等消息存储完成后再返回）
+    // DELAY（消息延迟级别，用于定时消息或消息重试）
     private Map<String, String> properties;
     private byte[] body;
     private String transactionId;

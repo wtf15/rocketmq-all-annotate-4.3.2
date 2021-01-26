@@ -86,8 +86,10 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
                         return -1;
                     }
                 }
+                // 如果从磁盘读取
                 case READ_FROM_STORE: {
                     try {
+                        // >>>>>>>>>
                         long brokerOffset = this.fetchConsumeOffsetFromBroker(mq);
                         AtomicLong offset = new AtomicLong(brokerOffset);
                         this.updateOffset(mq, offset.get(), false);
@@ -220,6 +222,7 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
                 this.mQClientFactory.getMQClientAPIImpl().updateConsumerOffsetOneway(
                     findBrokerResult.getBrokerAddr(), requestHeader, 1000 * 5);
             } else {
+                // >>>>>>>>>
                 this.mQClientFactory.getMQClientAPIImpl().updateConsumerOffset(
                     findBrokerResult.getBrokerAddr(), requestHeader, 1000 * 5);
             }
@@ -243,6 +246,7 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
             requestHeader.setConsumerGroup(this.groupName);
             requestHeader.setQueueId(mq.getQueueId());
 
+            // >>>>>>>>>
             return this.mQClientFactory.getMQClientAPIImpl().queryConsumerOffset(
                 findBrokerResult.getBrokerAddr(), requestHeader, 1000 * 5);
         } else {

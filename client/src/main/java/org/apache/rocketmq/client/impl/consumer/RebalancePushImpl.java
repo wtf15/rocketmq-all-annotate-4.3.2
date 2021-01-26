@@ -147,39 +147,50 @@ public class RebalancePushImpl extends RebalanceImpl {
             case CONSUME_FROM_MIN_OFFSET:
             case CONSUME_FROM_MAX_OFFSET:
             case CONSUME_FROM_LAST_OFFSET: {
+                // 从磁盘中读取到消息队列的消费进度
                 long lastOffset = offsetStore.readOffset(mq, ReadOffsetType.READ_FROM_STORE);
+                // 如果大于 0则直接返回即可
                 if (lastOffset >= 0) {
                     result = lastOffset;
                 }
                 // First start,no offset
+                // 表示该消息队列刚创建
                 else if (-1 == lastOffset) {
                     if (mq.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
                         result = 0L;
                     } else {
                         try {
+                            // 获取该消息队列当前最大的偏移量
                             result = this.mQClientFactory.getMQAdminImpl().maxOffset(mq);
                         } catch (MQClientException e) {
                             result = -1;
                         }
                     }
+                // 如果小于 -1，则表示该消息进度文件中存储了错误的偏移量，返回 -1
                 } else {
                     result = -1;
                 }
                 break;
             }
             case CONSUME_FROM_FIRST_OFFSET: {
+                // 从磁盘中读取到消息队列的消费进度
                 long lastOffset = offsetStore.readOffset(mq, ReadOffsetType.READ_FROM_STORE);
+                // 如果大于0则直接返回即可
                 if (lastOffset >= 0) {
                     result = lastOffset;
+                // 如果等于-1, CONSUME_FROM_FIRST_OFFSET模式下直接返回0，从头开始
                 } else if (-1 == lastOffset) {
                     result = 0L;
+                // 如果小于-1，则表示该消息进度文件中存储了错误的偏移量，返回 -1
                 } else {
                     result = -1;
                 }
                 break;
             }
             case CONSUME_FROM_TIMESTAMP: {
+                // 从磁盘中读取到消息队列的消费进度
                 long lastOffset = offsetStore.readOffset(mq, ReadOffsetType.READ_FROM_STORE);
+                // 如果大于0则直接返回即可
                 if (lastOffset >= 0) {
                     result = lastOffset;
                 } else if (-1 == lastOffset) {
@@ -198,6 +209,7 @@ public class RebalancePushImpl extends RebalanceImpl {
                             result = -1;
                         }
                     }
+                // 如果小于-1，则表示该消息进度文件中存储了错误的偏移量，返回-1
                 } else {
                     result = -1;
                 }
@@ -214,6 +226,9 @@ public class RebalancePushImpl extends RebalanceImpl {
     @Override
     public void dispatchPullRequest(List<PullRequest> pullRequestList) {
         for (PullRequest pullRequest : pullRequestList) {
+            // 将 PullRequest 加入到 PullMessageService 中
+            // 以便唤醒 PullMessageService 线程
+            // >>>>>>>>>
             this.defaultMQPushConsumerImpl.executePullRequestImmediately(pullRequest);
             log.info("doRebalance, {}, add a new pull request {}", consumerGroup, pullRequest);
         }

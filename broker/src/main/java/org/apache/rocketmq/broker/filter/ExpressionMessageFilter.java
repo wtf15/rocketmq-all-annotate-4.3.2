@@ -59,17 +59,21 @@ public class ExpressionMessageFilter implements MessageFilter {
 
     @Override
     public boolean isMatchedByConsumeQueue(Long tagsCode, ConsumeQueueExt.CqExtUnit cqExtUnit) {
+        // 如果订阅消息为空，返回 true，不过滤
         if (null == subscriptionData) {
             return true;
         }
 
+        // 如果是类过滤模式，返回 true
         if (subscriptionData.isClassFilterMode()) {
             return true;
         }
 
         // by tags code.
+        // 如果是 TAG 过滤模式
         if (ExpressionType.isTagType(subscriptionData.getExpressionType())) {
 
+            // 消息的 tagsCode 为空，返回 true
             if (tagsCode == null) {
                 return true;
             }
@@ -78,6 +82,7 @@ public class ExpressionMessageFilter implements MessageFilter {
                 return true;
             }
 
+            // 如果订阅消息的 TAG hashcodes 集合中包含消息的 tagsCode，返回 true
             return subscriptionData.getCodeSet().contains(tagsCode.intValue());
         } else {
             // no expression or no bloom
@@ -116,14 +121,17 @@ public class ExpressionMessageFilter implements MessageFilter {
 
     @Override
     public boolean isMatchedByCommitLog(ByteBuffer msgBuffer, Map<String, String> properties) {
+        // 如果订阅信息为空，返回 true
         if (subscriptionData == null) {
             return true;
         }
 
+        // 如果是类过滤模式，返回 true
         if (subscriptionData.isClassFilterMode()) {
             return true;
         }
 
+        // 如果是 TAG 模式，返回 true
         if (ExpressionType.isTagType(subscriptionData.getExpressionType())) {
             return true;
         }

@@ -291,6 +291,7 @@ public class MQClientAPIImpl {
         final SendMessageContext context,
         final DefaultMQProducerImpl producer
     ) throws RemotingException, MQBrokerException, InterruptedException {
+        // >>>>>>>>>
         return sendMessage(addr, brokerName, msg, requestHeader, timeoutMillis, communicationMode, null, null, null, 0, context, producer);
     }
 
@@ -570,6 +571,7 @@ public class MQClientAPIImpl {
                 assert false;
                 return null;
             case ASYNC:
+                // >>>>>>>>>
                 this.pullMessageAsync(addr, request, timeoutMillis, pullCallback);
                 return null;
             case SYNC:
@@ -588,16 +590,24 @@ public class MQClientAPIImpl {
         final long timeoutMillis,
         final PullCallback pullCallback
     ) throws RemotingException, InterruptedException {
+        // 异步向 Broker 拉取消息
+        // org.apache.rocketmq.broker.processor.PullMessageProcessor#processRequest,消息服务端 Broker组装消息
         this.remotingClient.invokeAsync(addr, request, timeoutMillis, new InvokeCallback() {
             @Override
             public void operationComplete(ResponseFuture responseFuture) {
                 RemotingCommand response = responseFuture.getResponseCommand();
                 if (response != null) {
                     try {
+                        // 客户端处理Broker服务端的响应
+                        // >>>>>>>>
                         PullResult pullResult = MQClientAPIImpl.this.processPullResponse(response);
                         assert pullResult != null;
+                        // 响应成功
+                        // >>>>>>>> DefaultMQPushConsumerImpl#pullMessage#PullCallback#onSuccess
                         pullCallback.onSuccess(pullResult);
                     } catch (Exception e) {
+                        // 响应异常
+                        // >>>>>>>> DefaultMQPushConsumerImpl#pullMessage#PullCallback#onException
                         pullCallback.onException(e);
                     }
                 } else {
@@ -648,6 +658,8 @@ public class MQClientAPIImpl {
         PullMessageResponseHeader responseHeader =
             (PullMessageResponseHeader) response.decodeCommandCustomHeader(PullMessageResponseHeader.class);
 
+        // 根据响应结果解码成 PullResultExt 对象
+        // response.getBody()此时只是从网络中读取消息列表到 byte[] messageBinary属性
         return new PullResultExt(pullStatus, responseHeader.getNextBeginOffset(), responseHeader.getMinOffset(),
             responseHeader.getMaxOffset(), null, responseHeader.getSuggestWhichBrokerId(), response.getBody());
     }

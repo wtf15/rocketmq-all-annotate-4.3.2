@@ -27,6 +27,7 @@ public interface MessageFilter {
      * @param tagsCode tagsCode
      * @param cqExtUnit extend unit of consume queue
      */
+    // 根据 ConsumeQueue 判断消息是否匹配
     boolean isMatchedByConsumeQueue(final Long tagsCode,
         final ConsumeQueueExt.CqExtUnit cqExtUnit);
 
@@ -37,6 +38,13 @@ public interface MessageFilter {
      *
      * @param msgBuffer message buffer in commit log, may be null if not invoked in store.
      * @param properties message properties, should decode from buffer if null by yourself.
+     */
+
+    /**
+     * 根据存储在 commitlog文件中的内容判断消息是否匹配
+     * @param msgBuffer 消息内容，如果为空， i亥方法返回 true
+     * @param properties 消息属性，主要用于表达式 SQL92 过滤模式
+     * @return
      */
     boolean isMatchedByCommitLog(final ByteBuffer msgBuffer,
         final Map<String, String> properties);
