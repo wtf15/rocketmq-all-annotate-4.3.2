@@ -62,21 +62,21 @@ public class TransactionMQProducer extends DefaultMQProducer {
     @Deprecated
     public TransactionSendResult sendMessageInTransaction(final Message msg,
         final LocalTransactionExecuter tranExecuter, final Object arg) throws MQClientException {
-        // 如果事件监听器为空，则直接返回异常
         if (null == this.transactionCheckListener) {
             throw new MQClientException("localTransactionBranchCheckListener is null", null);
         }
-        // >>>>>>>>>
         return this.defaultMQProducerImpl.sendMessageInTransaction(msg, tranExecuter, arg);
     }
 
     @Override
     public TransactionSendResult sendMessageInTransaction(final Message msg,
         final Object arg) throws MQClientException {
+        // 如果事件监听器为空，则直接返回异常
         if (null == this.transactionListener) {
             throw new MQClientException("TransactionListener is null", null);
         }
 
+        // >>>>>>>>>
         return this.defaultMQProducerImpl.sendMessageInTransaction(msg, null, arg);
     }
 

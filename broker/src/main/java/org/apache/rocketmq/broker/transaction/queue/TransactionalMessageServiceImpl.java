@@ -181,7 +181,7 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
                                 break;
                             }
                             // 如果是由于没有新的消息而返回为空(拉取状态为:PullStatus.NO_NEW_MSG),
-                            // 则结束该消息队列的 事务状态回查
+                            // 则结束该消息队列的事务状态回查
                             if (getResult.getPullResult().getPullStatus() == PullStatus.NO_NEW_MSG) {
                                 log.info("No new msg, the miss offset={} in={}, continue check={}, pull result={}", i,
                                     messageQueue, getMessageNullCount, getResult.getPullResult());

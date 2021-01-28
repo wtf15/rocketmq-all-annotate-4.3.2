@@ -836,6 +836,7 @@ public class BrokerController {
         if (BrokerRole.SLAVE != messageStoreConfig.getBrokerRole()) {
             if (this.transactionalMessageCheckService != null) {
                 log.info("Start transaction service!");
+                // >>>>>>>>> 事务消息回查
                 this.transactionalMessageCheckService.start();
             }
         }
